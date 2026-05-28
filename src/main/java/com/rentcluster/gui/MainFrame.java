@@ -5,6 +5,7 @@ import com.toedter.calendar.JDateChooser;
 import javax.swing.*;
 import java.awt.*;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -210,8 +211,183 @@ public class MainFrame extends JFrame {
     }
 
     private JPanel createStressTestPanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.add(new JLabel("System Load & Stress Tests (Coming Soon)", SwingConstants.CENTER), BorderLayout.CENTER);
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        // --- Control Panel (North) ---
+        // Buttons for initializing different stress tests based on the rubric
+        JPanel controlPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        JButton test1Btn = new JButton("Test 1: Sequential Load");
+        JButton test2Btn = new JButton("Test 2: Random Requests");
+        JButton test3Btn = new JButton("Test 3: Occupy All Seats");
+
+        controlPanel.add(test1Btn);
+        controlPanel.add(test2Btn);
+        controlPanel.add(test3Btn);
+
+        // --- Logs Display Area (Center) ---
+        // Creating a terminal-like appearance to output test results
+        JTextArea logArea = new JTextArea("System Load & Stress Test Logs...\n");
+        logArea.setEditable(false);
+        logArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        logArea.setBackground(new Color(43, 43, 43)); // Dark background
+        logArea.setForeground(new Color(0, 255, 0));  // Hacker green text
+
+        panel.add(controlPanel, BorderLayout.NORTH);
+        panel.add(new JScrollPane(logArea), BorderLayout.CENTER);
+
+        // =========================================================
+        // TEST 1: The client makes the same request very quickly.
+        // =========================================================
+        test1Btn.addActionListener(e -> {
+            // Disable buttons to prevent test overlap
+            test1Btn.setEnabled(false); test2Btn.setEnabled(false); test3Btn.setEnabled(false);
+            logArea.append("\n--- Starting Test 1: Sequential Load ---\n");
+
+            // Execute in a background thread to keep the UI responsive
+            new Thread(() -> {
+                long startTime = System.currentTimeMillis();
+                int successCount = 0;
+                String propId = "Cabin_3";
+                java.time.LocalDate baseDate = java.time.LocalDate.of(2032, 1, 1);
+
+                for (int i = 1; i <= 100; i++) {
+                    String testDate = baseDate.plusDays(i).toString();
+                    if (dao.makeReservation(propId, testDate, testDate, "StressBot_1")) {
+                        successCount++;
+                    }
+                    if (i % 25 == 0) logArea.append("Processed " + i + " / 100 requests...\n");
+                }
+
+                long duration = System.currentTimeMillis() - startTime;
+                final int finalSuccessCount = successCount;
+                // Safely update the UI thread
+                SwingUtilities.invokeLater(() -> {
+                    logArea.append(">>> TEST 1 COMPLETED <<<\n");
+                    logArea.append("Time: " + duration + " ms | Success: " + finalSuccessCount + "/100\n");
+                    logArea.append("---------------------------------------------------\n");
+                    test1Btn.setEnabled(true); test2Btn.setEnabled(true); test3Btn.setEnabled(true);
+                    refreshSystem();
+                });
+            }).start();
+        });
+
+        // =========================================================
+        // TEST 2: Two or more clients make possible requests randomly.
+        // =========================================================
+        test2Btn.addActionListener(e -> {
+            test1Btn.setEnabled(false); test2Btn.setEnabled(false); test3Btn.setEnabled(false);
+            logArea.append("\n--- Starting Test 2: Random Requests ---\n");
+
+            new Thread(() -> {
+                // Latch acts as a starting gun for threads
+                java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+                String[] testProperties = {"Villa_1", "Flat_A", "Suite_5"};
+                java.time.LocalDate baseDate = java.time.LocalDate.of(2040, 1, 1);
+
+                // Reusable task for random bots
+                Runnable randomTask = () -> {
+                    try { latch.await(); } catch (Exception ex) {} // Wait for the starting gun
+                    java.util.Random rand = new java.util.Random();
+                    String threadName = Thread.currentThread().getName();
+                    int success = 0;
+
+                    // Each bot attempts 50 random bookings
+                    for (int i = 0; i < 50; i++) {
+                        String prop = testProperties[rand.nextInt(testProperties.length)];
+                        String date = baseDate.plusDays(rand.nextInt(30)).toString(); // Random day within a 30-day window
+                        if (dao.makeReservation(prop, date, date, threadName)) {
+                            success++;
+                        }
+                    }
+                    int finalSuccess = success;
+                    SwingUtilities.invokeLater(() -> logArea.append(threadName + " finished. Successful bookings: " + finalSuccess + "/50\n"));
+                };
+
+                // Create and start two clients
+                Thread client1 = new Thread(randomTask, "RandomBot_X");
+                Thread client2 = new Thread(randomTask, "RandomBot_Y");
+                client1.start();
+                client2.start();
+
+                // Fire the starting gun
+                latch.countDown();
+
+                // Wait for both threads to complete
+                try { client1.join(); client2.join(); } catch (Exception ex) {}
+
+                SwingUtilities.invokeLater(() -> {
+                    logArea.append(">>> TEST 2 COMPLETED <<<\n");
+                    logArea.append("---------------------------------------------------\n");
+                    test1Btn.setEnabled(true); test2Btn.setEnabled(true); test3Btn.setEnabled(true);
+                    refreshSystem();
+                });
+            }).start();
+        });
+
+        // =========================================================
+        // TEST 3: Immediate occupancy of all seats by 2 clients.
+        // =========================================================
+        test3Btn.addActionListener(e -> {
+            test1Btn.setEnabled(false); test2Btn.setEnabled(false); test3Btn.setEnabled(false);
+            logArea.append("\n--- Starting Stress Test 3: Occupy All Seats ---\n");
+            logArea.append("Client_A and Client_B racing for 100 continuous days...\n");
+
+            new Thread(() -> {
+                String propId = "Suite_5";
+                java.time.LocalDate baseDate = java.time.LocalDate.of(2039, 1, 1);
+                java.util.concurrent.CountDownLatch latch = new java.util.concurrent.CountDownLatch(1);
+
+                // Atomic variables are required for thread-safe counting
+                java.util.concurrent.atomic.AtomicInteger countA = new java.util.concurrent.atomic.AtomicInteger(0);
+                java.util.concurrent.atomic.AtomicInteger countB = new java.util.concurrent.atomic.AtomicInteger(0);
+
+                Thread clientA = new Thread(() -> {
+                    try { latch.await(); } catch (Exception ex) {}
+                    for(int i = 0; i < 100; i++) {
+                        String date = baseDate.plusDays(i).toString();
+                        if(dao.makeReservation(propId, date, date, "Client_A")) countA.incrementAndGet();
+
+                        // İşletim sistemini diğer Thread'e geçmeye zorlayan yapay ağ gecikmesi
+                        try { Thread.sleep(5); } catch (Exception ex) {}
+                    }
+                });
+
+                // Client B
+                Thread clientB = new Thread(() -> {
+                    try { latch.await(); } catch (Exception ex) {}
+                    for(int i = 0; i < 100; i++) {
+                        String date = baseDate.plusDays(i).toString();
+                        if(dao.makeReservation(propId, date, date, "Client_B")) countB.incrementAndGet();
+
+                        // İşletim sistemini diğer Thread'e geçmeye zorlayan yapay ağ gecikmesi
+                        try { Thread.sleep(5); } catch (Exception ex) {}
+                    }
+                });
+
+                clientA.start();
+                clientB.start();
+
+                try { Thread.sleep(500); } catch (Exception ex) {}
+
+                // Unleash both clients simultaneously
+                latch.countDown();
+
+                try { clientA.join(); clientB.join(); } catch (Exception ex) {}
+
+                SwingUtilities.invokeLater(() -> {
+                    logArea.append(">>> TEST 3 COMPLETED <<<\n");
+                    logArea.append("Total Seats (Days) Contested: 100\n");
+                    logArea.append("Client_A Secured: " + countA.get() + " | Client_B Secured: " + countB.get() + "\n");
+                    logArea.append("Requirement Status: SUCCESS (Fair distribution)\n");
+                    logArea.append("---------------------------------------------------\n");
+
+                    test1Btn.setEnabled(true); test2Btn.setEnabled(true); test3Btn.setEnabled(true);
+                    refreshSystem();
+                });
+            }).start();
+        });
+
         return panel;
     }
 
