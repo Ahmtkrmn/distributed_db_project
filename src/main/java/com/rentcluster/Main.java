@@ -4,12 +4,14 @@ import com.rentcluster.database.CassandraConnector;
 import com.rentcluster.database.ReservationDAO;
 import com.rentcluster.gui.MainFrame;
 import javax.swing.SwingUtilities;
+import java.util.Locale;
 
 public class Main {
     public static void main(String[] args) {
         System.out.println("Starting the system...");
-
+        Locale.setDefault(Locale.ENGLISH);
         CassandraConnector dbConnector = new CassandraConnector();
+
         try {
             // Establishing the database connection
             dbConnector.connect();

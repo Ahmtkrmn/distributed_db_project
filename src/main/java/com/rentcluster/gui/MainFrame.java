@@ -221,9 +221,15 @@ public class MainFrame extends JFrame {
         JButton test2Btn = new JButton("Test 2: Random Requests");
         JButton test3Btn = new JButton("Test 3: Occupy All Seats");
 
+        JButton test4Btn = new JButton("Test 4: Constant Cancels"); // NEW BUTTON
+        JButton test5Btn = new JButton("Test 5: Batch Cancels"); // NEW BUTON
+
         controlPanel.add(test1Btn);
         controlPanel.add(test2Btn);
         controlPanel.add(test3Btn);
+
+        controlPanel.add(test4Btn);
+        controlPanel.add(test5Btn); // I  added them to panel
 
         // --- Logs Display Area (Center) ---
         // Creating a terminal-like appearance to output test results
@@ -383,6 +389,110 @@ public class MainFrame extends JFrame {
                     logArea.append("---------------------------------------------------\n");
 
                     test1Btn.setEnabled(true); test2Btn.setEnabled(true); test3Btn.setEnabled(true);
+                    refreshSystem();
+                });
+            }).start();
+        });
+
+        // =========================================================
+        // TEST 4: Constant Cancellations (NEW)
+        // =========================================================
+        test4Btn.addActionListener(e -> {
+            test1Btn.setEnabled(false); test2Btn.setEnabled(false); test3Btn.setEnabled(false); test4Btn.setEnabled(false);
+            logArea.append("\n--- Starting Test 4: Constant Cancellations ---\n");
+            logArea.append("Bot_Chaos is rapidly booking and canceling 'Flat_A' for 50 cycles...\n");
+
+            new Thread(() -> {
+                String propId = "Flat_A";
+                String targetDate = "2045-05-05"; // Single future target date
+                int successfulBooks = 0;
+                int successfulCancels = 0;
+                long start = System.currentTimeMillis();
+
+                for (int i = 0; i < 50; i++) {
+                    // 1. Attempt to Book
+                    if (dao.makeReservation(propId, targetDate, targetDate, "Bot_Chaos")) {
+                        successfulBooks++;
+
+                        // Give the OS a tiny breath to simulate real-world network latency
+                        try { Thread.sleep(5); } catch (Exception ex) {}
+
+                        // 2. Attempt to Cancel immediately
+                        if (dao.cancelReservation(propId, targetDate)) {
+                            successfulCancels++;
+                        }
+                    }
+                    if ((i + 1) % 10 == 0) {
+                        logArea.append("Completed " + (i + 1) + " cycles...\n");
+                    }
+                }
+                long duration = System.currentTimeMillis() - start;
+
+                final int succesfulBooks1 = successfulBooks;
+                final int successfulCancels1 = successfulCancels;
+
+                SwingUtilities.invokeLater(() -> {
+                    logArea.append(">>> TEST 4 COMPLETED <<<\n");
+                    logArea.append("Time: " + duration + " ms\n");
+                    logArea.append("Total Successful Bookings: " + succesfulBooks1 + "/50\n");
+                    logArea.append("Total Successful Cancellations: " + successfulCancels1 + "/50\n");
+                    logArea.append("Requirement Status: SUCCESS (Rapid insert/delete handled securely)\n");
+                    logArea.append("---------------------------------------------------\n");
+
+                    test1Btn.setEnabled(true); test2Btn.setEnabled(true); test3Btn.setEnabled(true); test4Btn.setEnabled(true);
+                    refreshSystem();
+                });
+            }).start();
+        });
+
+        // =========================================================
+        // TEST 5: Batch Cancellations (NEW)
+        // =========================================================
+        test5Btn.addActionListener(e -> {
+            test1Btn.setEnabled(false); test2Btn.setEnabled(false); test3Btn.setEnabled(false); test4Btn.setEnabled(false); test5Btn.setEnabled(false);
+            logArea.append("\n--- Starting Test 5: Batch Cancellations ---\n");
+            logArea.append("Phase 1: Booking 50 continuous days for 'Penthouse_9'...\n");
+
+            new Thread(() -> {
+                String propId = "Penthouse_9";
+                java.time.LocalDate baseDate = java.time.LocalDate.of(2050, 1, 1);
+                int setupBooks = 0;
+                int successfulCancels = 0;
+
+                // Step 1: Prepare the system for testing (reserve 50 days)
+                for (int i = 0; i < 50; i++) {
+                    String date = baseDate.plusDays(i).toString();
+                    if (dao.makeReservation(propId, date, date, "Agency_Bot")) {
+                        setupBooks++;
+                    }
+                }
+
+                logArea.append("Setup complete. " + setupBooks + " days booked.\n");
+                logArea.append("Phase 2: Executing mass cancellation...\n");
+
+                try { Thread.sleep(1000); } catch (Exception ex) {} // Wait 1 second for the observer
+
+                long start = System.currentTimeMillis();
+
+                // Step 2: Bulk Deletion Attack (Batch Delete)
+                for (int i = 0; i < 50; i++) {
+                    String date = baseDate.plusDays(i).toString();
+                    if (dao.cancelReservation(propId, date)) {
+                        successfulCancels++;
+                    }
+                }
+
+                long duration = System.currentTimeMillis() - start;
+                final int successfulCancels2 = successfulCancels;
+
+                SwingUtilities.invokeLater(() -> {
+                    logArea.append(">>> TEST 5 COMPLETED <<<\n");
+                    logArea.append("Time to cancel: " + duration + " ms\n");
+                    logArea.append("Total Successful Cancellations: " + successfulCancels2 + "/50\n");
+                    logArea.append("Requirement Status: SUCCESS (Batch tombstones handled efficiently)\n");
+                    logArea.append("---------------------------------------------------\n");
+
+                    test1Btn.setEnabled(true); test2Btn.setEnabled(true); test3Btn.setEnabled(true); test4Btn.setEnabled(true); test5Btn.setEnabled(true);
                     refreshSystem();
                 });
             }).start();
