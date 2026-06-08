@@ -30,6 +30,8 @@ Follow these steps to run the project on your local machine:
 Ensure Docker Desktop is running on your system. Open your terminal, navigate to the project's root directory (where the `docker-compose.yml` is located), and execute:
 ```bash
 docker-compose up -d
+```
+
 Note: This command spins up 3 independent Cassandra nodes in the background. Please allow 1-2 minutes for the cluster to fully initialize and communicate.
 
 2. Run the Java Application (Auto-Initialization)
