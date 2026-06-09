@@ -354,7 +354,7 @@ public class MainFrame extends JFrame {
                         String date = baseDate.plusDays(i).toString();
                         if(dao.makeReservation(propId, date, date, "Client_A")) countA.incrementAndGet();
 
-                        // İşletim sistemini diğer Thread'e geçmeye zorlayan yapay ağ gecikmesi
+                        // Artificial delay forcing the operating system to switch to the other thread
                         try { Thread.sleep(5); } catch (Exception ex) {}
                     }
                 });
@@ -366,7 +366,7 @@ public class MainFrame extends JFrame {
                         String date = baseDate.plusDays(i).toString();
                         if(dao.makeReservation(propId, date, date, "Client_B")) countB.incrementAndGet();
 
-                        // İşletim sistemini diğer Thread'e geçmeye zorlayan yapay ağ gecikmesi
+                        // Artificial delay forcing the operating system to switch to the other thread
                         try { Thread.sleep(5); } catch (Exception ex) {}
                     }
                 });
