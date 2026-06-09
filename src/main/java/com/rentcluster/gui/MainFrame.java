@@ -395,7 +395,7 @@ public class MainFrame extends JFrame {
         });
 
         // =========================================================
-        // TEST 4: Constant Cancellations (NEW)
+        // TEST 4: Constant Cancellations
         // =========================================================
         test4Btn.addActionListener(e -> {
             test1Btn.setEnabled(false); test2Btn.setEnabled(false); test3Btn.setEnabled(false); test4Btn.setEnabled(false);
@@ -446,7 +446,7 @@ public class MainFrame extends JFrame {
         });
 
         // =========================================================
-        // TEST 5: Batch Cancellations (NEW)
+        // TEST 5: Batch Cancellations
         // =========================================================
         test5Btn.addActionListener(e -> {
             test1Btn.setEnabled(false); test2Btn.setEnabled(false); test3Btn.setEnabled(false); test4Btn.setEnabled(false); test5Btn.setEnabled(false);

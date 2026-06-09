@@ -15,7 +15,7 @@ public class ReservationDAO {
     public ReservationDAO(CqlSession session) {
         this.session = session;
     }
-
+    // fetching data
     public List<String> getAllProperties() {
         List<String> properties = new ArrayList<>();
         String query = "SELECT property_id FROM properties";
@@ -84,7 +84,7 @@ public class ReservationDAO {
     // Added IF EXISTS and explicit status update to prevent 'null' status issues
     public boolean updateReservation(String propertyId, String reservationDate, String newUserId) {
         String query = String.format(
-                "UPDATE reservations SET user_id = '%s', status = 'BOOKED' WHERE property_id = '%s' AND reservation_date = '%s' IF EXISTS",
+                "UPDATE reservations SET user_id = '%s', status = 'BOOKED' WHERE property_id = '%s' AND reservation_date = '%s' IF EXISTS", //ensure we don't upadte a non existing row
                 newUserId, propertyId, reservationDate
         );
         ResultSet rs = session.execute(query);
